@@ -1,5 +1,6 @@
 import logging
 from falkordb import Graph
+from graphrag_sdk.memgraph import Memgraph
 from graphrag_sdk.steps.Step import Step
 from graphrag_sdk.ontology import Ontology
 from graphrag_sdk.models import (
@@ -22,7 +23,7 @@ class GraphQueryGenerationStep(Step):
 
     def __init__(
         self,
-        graph: Graph,
+        graph: Graph | Memgraph,
         ontology: Ontology,
         chat_session: GenerativeModelChatSession,
         config: dict = None,
@@ -63,7 +64,10 @@ class GraphQueryGenerationStep(Step):
                     raise Exception("\n".join(validation_errors))
 
                 if cypher is not None:
-                    result_set = self.graph.query(cypher).result_set
+                    if isinstance(self.graph, Graph):
+                        result_set = self.graph.query(cypher).result_set
+                    elif isinstance(self.graph, Memgraph):
+                        result_set = self.graph.query(cypher)
                     context = stringify_falkordb_response(result_set)
                     logger.debug(f"Context: {context}")
                     logger.debug(f"Context size: {len(result_set)}")
