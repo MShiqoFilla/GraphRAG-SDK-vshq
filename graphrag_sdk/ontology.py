@@ -1,6 +1,7 @@
 import json
 from falkordb import Graph
 from graphrag_sdk.source import AbstractSource
+from graphrag_sdk.memgraph import Memgraph
 from graphrag_sdk.models import GenerativeModel
 import graphrag_sdk
 import logging
@@ -81,7 +82,7 @@ class Ontology(object):
         )
 
     @staticmethod
-    def from_graph(graph: Graph):
+    def from_graph(graph: Graph | Memgraph):
         """
         Creates an Ontology object from a given graph.
 
@@ -93,14 +94,54 @@ class Ontology(object):
         """
         ontology = Ontology()
 
-        entities = graph.query("MATCH (n) RETURN n").result_set
-        for entity in entities:
-            ontology.add_entity(Entity.from_graph(entity[0]))
+        if isinstance(graph, Graph):
+            entities = graph.query("MATCH (n) RETURN n").result_set
+            new_entity = set()
+            for entity in entities:
+                curr_entity = entity[0].labels[0]
+                if curr_entity not in new_entity:
+                    ontology.add_entity(Entity.from_graph(entity[0]))
+                    new_entity.add(curr_entity)
+            # ontology.add_entity(Entity.from_graph(entity[0]))
 
-        for relation in graph.query("MATCH ()-[r]->() RETURN r").result_set:
-            ontology.add_relation(
-                Relation.from_graph(relation[0], [x for xs in entities for x in xs])
-            )
+            relations = graph.query("MATCH ()-[r]->() RETURN r").result_set
+            new_relation = set()
+            for relation in relations:
+                curr_relation = relation[0].relation
+                if curr_relation not in new_relation:
+                    ontology.add_relation(
+                        Relation.from_graph(relation[0], [x for xs in entities for x in xs])
+                    )
+                    new_relation.add(curr_relation)
+                # ontology.add_relation(
+                #     Relation.from_graph(relation[0], [x for xs in entities for x in xs])
+                # )
+        
+        elif isinstance(graph, Memgraph):
+            entities = graph.query("MATCH (n) RETURN n")
+            new_entity = set()
+            for entity in entities:
+                curr_entity = list(entity[0].labels)[0]
+                if curr_entity not in new_entity:
+                    ontology.add_entity(Entity.from_memgraph(entity[0]))
+                    new_entity.add(curr_entity)
+
+            relations = graph.query("MATCH ()-[r]->() RETURN r")
+            new_relation = set()
+            for relation in relations:
+                curr_relation = relation[0].type
+                if curr_relation not in new_relation:
+                    ontology.add_relation(Relation.from_memgraph(relation[0], [x for xs in entities for x in xs]))
+                    new_relation.add(curr_relation)
+
+        # entities = graph.query("MATCH (n) RETURN n").result_set
+        # for entity in entities:
+        #     ontology.add_entity(Entity.from_graph(entity[0]))
+
+        # for relation in graph.query("MATCH ()-[r]->() RETURN r").result_set:
+        #     ontology.add_relation(
+        #         Relation.from_graph(relation[0], [x for xs in entities for x in xs])
+        #     )
 
         return ontology
 

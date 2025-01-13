@@ -41,6 +41,18 @@ class Entity:
         self.description = description
 
     @staticmethod
+    def from_memgraph(entity):
+        return Entity(
+            list(entity.labels)[0],
+            [
+                Attribute.from_string(attr, entity.properties[attr])
+                for attr in entity.properties
+                if attr != descriptionKey
+            ],
+            entity.properties.get(descriptionKey, ""),
+        )
+
+    @staticmethod
     def from_graph(entity: GraphNode):
         """
         Converts a GraphNode object to an Entity object.
@@ -53,10 +65,19 @@ class Entity:
 
         """
         logger.debug(f"Entity.from_graph: {entity}")
+        # return Entity(
+        #     entity.labels[0],
+        #     [
+        #         Attribute.from_string(f"{attr}:{entity.properties[attr]}")
+        #         for attr in entity.properties
+        #         if attr != descriptionKey
+        #     ],
+        #     entity.properties.get(descriptionKey, ""),
+        # )
         return Entity(
             entity.labels[0],
             [
-                Attribute.from_string(f"{attr}:{entity.properties[attr]}")
+                Attribute.from_string(attr, entity.properties[attr])
                 for attr in entity.properties
                 if attr != descriptionKey
             ],

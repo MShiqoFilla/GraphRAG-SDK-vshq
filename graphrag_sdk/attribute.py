@@ -38,6 +38,8 @@ class AttributeType:
             return AttributeType.BOOLEAN
         if txt.lower() == AttributeType.LIST:
             return AttributeType.LIST
+        else:
+            return "mixed"
         raise Exception(f"Invalid attribute type: {txt}")
 
 
@@ -95,7 +97,7 @@ class Attribute:
         )
 
     @staticmethod
-    def from_string(txt: str):
+    def from_string(name, txt: str):
         """
         Parses an attribute from a string.
         The "!" symbol indicates that the attribute is unique.
@@ -115,16 +117,30 @@ class Attribute:
         Raises:
             Exception: If the attribute type is invalid.
         """
-        name = txt.split(":")[0].strip()
-        attr_type = txt.split(":")[1].split("!")[0].split("*")[0].strip()
-        unique = "!" in txt
-        required = "*" in txt
+        # name = txt.split(":")[0].strip()
+        # attr_type = txt.split(":")[1].split("!")[0].split("*")[0].strip()
+        # unique = "!" in txt
+        # required = "*" in txt
+        unique = False
+        required = False
+
+        if isinstance(txt, str):
+            attr_type = AttributeType.STRING
+        elif isinstance(txt, (int, float)):
+            attr_type = AttributeType.NUMBER
+        elif isinstance(txt, bool):
+            attr_type = AttributeType.BOOLEAN
+        elif isinstance(txt, list):
+            attr_type = AttributeType.LIST
+        else:
+            attr_type = "mixed"
 
         if attr_type not in [
             AttributeType.STRING,
             AttributeType.NUMBER,
             AttributeType.BOOLEAN,
             AttributeType.LIST,
+            "mixed"
         ]:
             raise Exception(f"Invalid attribute type: {attr_type}")
 

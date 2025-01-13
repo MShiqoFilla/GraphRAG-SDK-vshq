@@ -128,6 +128,23 @@ class Relation:
         self.attributes = attributes
 
     @staticmethod
+    def from_memgraph(relation, entities):
+        logger.debug(f"Relation.from_graph: {relation}")
+        return Relation(
+            relation.type,
+            _RelationEntity(
+                next(list(n.labels)[0] for n in entities if n.id == relation.start_id)
+            ),
+            _RelationEntity(
+                next(list(n.labels)[0] for n in entities if n.id == relation.end_id)
+            ),
+            [
+                Attribute.from_string(attr, relation.properties[attr])
+                for attr in relation.properties
+            ]
+        )
+
+    @staticmethod
     def from_graph(relation: GraphEdge, entities: list[GraphNode]):
         """
         Creates a Relation object from a graph edge and a list of graph nodes.
@@ -148,10 +165,14 @@ class Relation:
             _RelationEntity(
                 next(n.labels[0] for n in entities if n.id == relation.dest_node)
             ),
+            # [
+            #     Attribute.from_string(f"{attr}:{relation.properties[attr]}")
+            #     for attr in relation.properties
+            # ],
             [
-                Attribute.from_string(f"{attr}:{relation.properties[attr]}")
+                Attribute.from_string(attr, relation.properties[attr])
                 for attr in relation.properties
-            ],
+            ]
         )
 
     @staticmethod
